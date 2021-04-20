@@ -40,11 +40,19 @@ def viterbi_step(all_tags, tag_to_ix, cur_tag_scores, transition_scores, prev_sc
     - viterbivars: a list of pytorch Variables such that each element contains the score for each tag in all_tags for the current token in the sentence
     - bptrs: a list of idx that contains the best_previous_tag for each tag in all_tags for the current token in the sentence
     """
+
     bptrs = []
     viterbivars = []
+
     # make sure end_tag exists in all_tags
     for next_tag in list(all_tags):
-        raise NotImplementedError
+        next_tag_ix = tag_to_ix[next_tag]
+        vec = prev_scores + transition_scores[next_tag_ix, :] + cur_tag_scores[next_tag_ix]
+        best_prev_tag_ix = argmax(vec)
+        viterbivars.append(prev_scores[0, best_prev_tag_ix] + transition_scores[next_tag_ix, best_prev_tag_ix] +
+                           cur_tag_scores[next_tag_ix])
+
+        bptrs.append(best_prev_tag_ix)
 
     return viterbivars, bptrs
 
@@ -66,24 +74,26 @@ def build_trellis(all_tags, tag_to_ix, cur_tag_scores, transition_scores):
     - best_path: the actual best_path, which is the list of tags for each token: exclude the START_TAG and END_TAG here.
     """
     
-    ix_to_tag = {v: k for k, v in tag_to_ix.items()}
-
-    # setting all the initial score to START_TAG
-    # make sure END_TAG is in all_tags
+    ix_to_tag = {v:k for k, v in tag_to_ix.items()}
     initial_vec = np.full((1, len(all_tags)), -np.inf)
     initial_vec[0][tag_to_ix[START_TAG]] = 0
     prev_scores = torch.autograd.Variable(torch.from_numpy(initial_vec.astype(np.float32))).view(1, -1)
     whole_bptrs = []
-    for m in range(len(cur_tag_scores)): 
-        raise NotImplementedError
 
+    for cur_tag_score in cur_tag_scores:
+        prev_scores, bptrs = viterbi_step(all_tags, tag_to_ix, cur_tag_score, transition_scores, prev_scores)
+        prev_scores = torch.autograd.Variable(torch.from_numpy(np.array(prev_scores, dtype=np.float32))).view(1, -1)
+        whole_bptrs.append(bptrs)
 
-    # after you finish calculating the tags for all the words: don't forget to calculate the scores for the END_TAG
+    best_path = []
+    best_last_index = argmax(prev_scores)
+    path_score = prev_scores[0, best_last_index] + transition_scores[tag_to_ix[END_TAG], best_last_index]
 
+    whole_bptrs.reverse()
+    for bptrs in whole_bptrs:
+        best_path.append(ix_to_tag[best_last_index])
+        best_last_index = bptrs[best_last_index]
 
-    # Calculate the best_score and also the best_path using backpointers and don't forget to reverse the path
-
-
-    return path_score, best_path
+    return path_score, list(reversed(best_path))
 
     

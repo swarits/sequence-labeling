@@ -52,9 +52,8 @@ class BiLSTM(nn.Module):
         self.lstm: lstm layer
         self.hidden2tag: fully connected layer
         """
-        raise NotImplementedError
         
-        #self.word_embeds = 
+        self.word_embeds = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_dim)
         
         if embeddings is not None:
             if isinstance(embeddings, torch.nn.Embedding):
@@ -64,10 +63,10 @@ class BiLSTM(nn.Module):
         
         # Maps the embeddings of the word into the hidden state. 
         # In choosing hidden_size, remember this is a *bidirectional* LSTM!
-        #self.lstm = 
+        self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=embedding_dim // 2, num_layers=1, bidirectional=True)
 
         # Maps the output of the LSTM into tag space.
-        #self.hidden2tag = 
+        self.hidden2tag = nn.Linear(hidden_dim, self.tagset_size, bias=True)
         
         self.hidden = self.init_hidden()
 
@@ -88,8 +87,11 @@ class BiLSTM(nn.Module):
         returns lstm_feats: scores for each tag for each token in the sentence.
         """
         self.hidden = self.init_hidden()
-
-        raise NotImplementedError
+        word_embeds = self.word_embeds(sentence)
+        output, self.hidden = self.lstm.forward(word_embeds.view(len(sentence), 1, -1), self.hidden)
+        tag = self.hidden2tag(output.view(len(sentence), -1))
+        
+        return tag
         
     
     

@@ -4,8 +4,9 @@ from oswegonlp import classifier_base
 from oswegonlp import bilstm
 from oswegonlp.constants import DEV_FILE, OFFSET, TRAIN_FILE, UNK
 import operator
+from collections import defaultdict
 
-argmax = lambda x : max(x.iteritems(),key=lambda y : y[1])[0]
+argmax = lambda x : max(x.items(),key=lambda y : y[1])[0]
 
 def make_classifier_tagger(weights):
     """
@@ -13,6 +14,19 @@ def make_classifier_tagger(weights):
     :returns: a function that takes a list of words, and a list of candidate tags, and returns tags for all words
     :rtype: function
     """
+    tags_set = set()
+    vocabs_set = set()
+    for weight in weights:
+        tags_set.add(weight[0])
+        vocabs_set.add(weight[1])
+    tags = list(tags_set)
+    vocabs = list(vocabs_set)
+
+    repeat_tag = argmax({tag: weights[(tag, OFFSET)] for tag in tags})
+    classifier_map = defaultdict(lambda : repeat_tag)
+
+    for word in vocabs:
+        classifier_map[word] = argmax({tag: weights[(tag, word)] for tag in tags})
 
     def classify(words, all_tags):
         """This nested function should return a list of tags, computed using a classifier with the weights passed as arguments to make_classifier_tagger and using basefeatures for each token (just the token and the offset)
@@ -21,7 +35,7 @@ def make_classifier_tagger(weights):
         :returns: list of tags
         :rtype: list
         """
-        raise NotImplementedError
+        return [classifier_map[word] for word in words]
 
     return classify
 

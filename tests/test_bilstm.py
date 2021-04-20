@@ -40,11 +40,11 @@ def test_dlmodel_init():
 def test_dlmodel_forward():
     global model, X_tr, word_to_ix
     
-    torch.manual_seed(765);
+    torch.manual_seed(765)
     lstm_feats = model(bilstm.prepare_sequence(X_tr[0], word_to_ix))
-    assert_almost_equal(lstm_feats[0].data.numpy()[0],0.17915432, places=4)
-    assert_almost_equal(lstm_feats[0].data.numpy()[1],-0.28165285, places=4)
-    assert_almost_equal(lstm_feats[0].data.numpy()[2],-0.44030046, places=4)
+    assert_almost_equal(lstm_feats[0].data.numpy()[0], -0.12883559, places=4)
+    assert_almost_equal(lstm_feats[0].data.numpy()[1], -0.42470014, places=4)
+    assert_almost_equal(lstm_feats[0].data.numpy()[2], -0.31790152, places=4)
     
 #5.3a
 def test_bilstm_dev_accuracy():

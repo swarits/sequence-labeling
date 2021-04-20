@@ -22,12 +22,16 @@ def compute_transition_weights(trans_counts, smoothing):
 
     """
     weights = defaultdict(float)
-    
-    raise NotImplementedError
-
     all_tags = list(trans_counts.keys()) + [END_TAG]
 
-
+    for x in trans_counts:
+        v = trans_counts[x]
+        v_total = len(list(v.elements()))
+        for tag in all_tags:
+            if tag == START_TAG:
+                weights[(tag, x)] = -np.inf
+            else:
+                weights[(tag, x)] = np.log(v[tag] + smoothing) - np.log(v_total + (len(all_tags) * smoothing))
 
     return weights
 
@@ -49,13 +53,21 @@ def compute_weights_variables(nb_weights, hmm_trans_weights, vocab, word_to_ix, 
     """
     # Assume that tag_to_ix includes both START_TAG and END_TAG
 
-    tag_transition_probs = np.full((len(tag_to_ix), len(tag_to_ix)), -np.inf)
-    emission_probs = np.full((len(vocab), len(tag_to_ix)), 0.0)
+    transition_prob = np.full((len(tag_to_ix), len(tag_to_ix)), -np.inf)
+    emission_prob = np.full((len(vocab), len(tag_to_ix)), 0.)
+    for tag_i in tag_to_ix:
+        for tag_j in tag_to_ix:
+                transition_prob[tag_to_ix[tag_i], tag_to_ix[tag_j]] = hmm_trans_weights[(tag_i, tag_j)] if (tag_i, tag_j) in hmm_trans_weights else -np.inf
 
-    raise NotImplementedError
+    for word in word_to_ix:
+        for tag_i in tag_to_ix:
+            default_val = 0
+            if tag_i == START_TAG or tag_i == END_TAG:
+                default_val = -np.inf
+            emission_prob[word_to_ix[word]][tag_to_ix[tag_i]] = nb_weights[(tag_i, word)] if (tag_i, word) in nb_weights else default_val
 
-    emission_probs_vr = Variable(torch.from_numpy(emission_probs.astype(np.float32)))
-    tag_transition_probs_vr = Variable(torch.from_numpy(tag_transition_probs.astype(np.float32)))
+    emission_probs_vr = Variable(torch.from_numpy(emission_prob.astype(np.float32)))
+    tag_transition_probs_vr = Variable(torch.from_numpy(transition_prob.astype(np.float32)))
 
     return emission_probs_vr, tag_transition_probs_vr
     

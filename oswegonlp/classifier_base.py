@@ -17,10 +17,26 @@ def make_feature_vector(x,y):
     :rtype: dict
 
     """
-    
+    fv = {(y, OFFSET): 1}
+    for feature, count in x.items():
+        fv[(y, feature)] = count
+    return fv
     #raise NotImplementedError
     
+    
+def compute_score(x,y,weights):
+    total = 0
+    for feature, count in make_feature_vector(x,y).items():
+        if feature in weights:
+            total += weights[feature] * count
+    return total
 
+def compute_scores(x,labels,weights):
+    scores = {}
+    for l in labels:
+        scores[l] = compute_score(x,l,weights)
+        #scores.append((l,))
+    return scores
 
 def predict(x,weights,labels):
     """prediction function
@@ -32,7 +48,6 @@ def predict(x,weights,labels):
     :rtype: string, dict
 
     """
-    
+    scores = compute_scores(x, labels, weights)
+    return argmax(scores),scores
     #raise NotImplementedError
-
-

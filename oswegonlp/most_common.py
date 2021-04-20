@@ -13,12 +13,13 @@ def get_tag_word_counts(trainfile):
     trainfile: -- the filename to be passed as argument to conll_seq_generator
     :returns: -- a default dict of counters, where the keys are tags.
     """
-    all_counters = defaultdict(lambda: Counter())
+    counters = defaultdict(lambda: Counter())
     
-    raise NotImplementedError
-    
-    
-    return all_counters
+    for words, tags in conll_seq_generator(trainfile):
+        for tag, word in zip(tags, words):
+            counters[tag].update([word])
+
+    return counters
 
 def get_tag_to_ix(input_file):
     """
@@ -87,9 +88,20 @@ def get_most_common_word_weights(trainfile):
 
     """
     weights = defaultdict(float)
+    wc = defaultdict(lambda: Counter())
+    tc = defaultdict(lambda: Counter())
 
-    raise NotImplementedError
-            
+    for words, tags in conll_seq_generator(trainfile):
+        for tag, word in zip(tags, words):
+            wc[word].update([tag])
+            tc[tag].update([word])
+
+    for word in wc:
+        for tag in wc[word]:
+            weights[(tag, word)] = wc[word][tag]
+    for tag in tc:
+        weights[(tag, OFFSET)] = len(list(tc[tag].elements()))
+
     return weights
 
 
@@ -101,7 +113,13 @@ def get_tag_trans_counts(input_file):
     """
 
     tot_counts = defaultdict(lambda: Counter())
-
-    raise NotImplementedError
+    for index, (words, tags) in enumerate(conll_seq_generator(input_file)):
+        for index, tag in enumerate(tags):
+            if index == 0:
+                tot_counts[START_TAG].update([tag])
+            if index == len(tags) - 1:
+                tot_counts[tag].update([END_TAG])
+            else:
+                tot_counts[tag].update([tags[index + 1]])
 
     return dict(tot_counts)
